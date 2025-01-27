@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+body {
+    margin: 10px;
+    font-family: "Courier New", Courier, monospace;
+    color: #d3d3d3;
+    background-color: #000;
+}
+
+h1{
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    width: 470px;
+}
+
+#instructions{
+    border:1px solid #d3d3d3;
+    background-color: #2C4329;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    width: 580px;
+    margin-bottom: 10px;
+}
+
+#controls{
+    border:1px solid #d3d3d3;
+    background-color: #2C4329;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 15px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: block;
+    width: 580px;
+}
+
+canvas {
+    border:1px solid #d3d3d3;
+    background-color: #4F7849;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    width: 600px;
+}
+
+#results{
+    margin-top: 10px;
+    /*border:1px solid #d3d3d3;*/
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    width: 600px;
+}
+
+#username{
+    background-color: #1A1A1A;
+    border: 1px solid #4F7849;
+    width: 200px;
+    color: #fff;
+}
+
+#holes_quantity{
+    background-color: #1A1A1A;
+    border: 1px solid #4F7849;
+    width: 40px;
+    color: #fff;
+}
+
+#message{
+    background-color: #cf0000;
+    border: 1px solid #6b0c00;
+    color: #fff;
+}
+
+#start{
+    background-color: #4F7849;
+    border: 1px solid #d1d1d1;
+    color: #000;
+    width: 50px;
+}
+
+table.results {
+  font-family: "Courier New", Courier, monospace;
+  border: 2px solid #4F7849;
+  background-color: #1A1A1A;
+  width: 100%;
+  text-align: center;
+  border-collapse: collapse;
+}
+table.results td, table.results th {
+  border: 1px solid #4F7849;
+  padding: 3px 1px;
+}
+table.results tbody td {
+  font-size: 15px;
+  font-weight: bold;
+  color: #4F7849;
+}
+table.results tr:nth-child(even) {
+  background: #262926;
+}
+table.results thead {
+  background: #2C4329;
+  border-bottom: 1px solid #444444;
+}
+table.results thead th {
+  font-size: 16px;
+  font-weight: bold;
+  color: #B4B4B4;
+  text-align: center;
+  border-left: 2px solid #D0E4F5;
+}
+table.results thead th:first-child {
+  border-left: none;
+}
+
+table.results tfoot {
+  font-weight: bold;
+}
+
+</style>
+
+</head>
+<body >
+    <h1>Code Challenge: Peg Game</h1>
+    <div id="instructions">
+        
+        <h3>Rules</h3>
+        <ul>
+            <li>To jump a peg, it must have an empty space next to it.</li>
+            <li>You can use any peg as a jumper, as long as the peg you jump is directly adjacent to it and has an open space next to it.</li>
+            <li>Every peg you jump must be removed.</li>
+            <li>You win when there is only one peg left.</li>
+            </li>
+        </ul>
+        <h3>Before you start:</h3>
+        <ul>
+            <li>Provide your nickname.</li>
+            <li>Indicate how many holes you want to draw in the board.</li>
+        </ul>
+    </div>
+
+    <div id="controls">
+        <span>Nickname: </span>
+        <input type="text" id="username"></input>
+        <span>Holes Quantity: </span>
+        <input type="text" id="holes_quantity"></input>
+        <button id="start" onclick="startGame()">Start</button>
+        <p id="message"></p>
+    </div>
+
+    <canvas id="canvas"></canvas>
+    
+    <div id="results">
+    </div>
+    </body>
+    </html>
+    
+    <script>
+
+        function getResults(){
+            console.log("Host location: "+window.location.host);
+            var xhr = new XMLHttpRequest();
+
+            // Configure it: GET-request for a URL
+            xhr.open("GET", "http://"+window.location.host+"/results", true);
+
+            // Set up the callback function to handle the response
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) { // Check if the request is complete
+                    if (xhr.status === 200) { // Check if the status is OK
+                        var htmlString = "<table class='results'><tr><th>ID</th><th>Username</th><th>Result</th><th>Score</th><th>Date</th></tr>"
+                        var results = JSON.parse(xhr.responseText);
+                        //console.log("Response received:", results);
+                        results.forEach((item) => {
+                            htmlString = htmlString +`<tr><td>${item.id}</td><td>${item.username}</td><td>${item.result}</td><td>${item.score}</td><td>${item.result_date} UTC</td></tr>`; 
+                            console.log(`id: ${item.id} Username: ${item.username} Result: ${item.result} Score: ${item.score} Date: ${item.result_date} UTC`);
+                        });
+                        htmlString = htmlString + "</table>";
+
+                        document.getElementById("results").innerHTML = htmlString;
+
+                    } else {
+                        console.error("Error:", xhr.status, xhr.statusText);
+                    }
+                }
+            };
+
+            // Send the request
+            xhr.send();
+        }
+
+        function sendResult(username,result,score){
+            console.log("Host location: "+window.location.host);
+            var xhr = new XMLHttpRequest();
+
+            // Configure it: GET-request for a URL
+            xhr.open("GET", "http://"+window.location.host+"/insert?username="+username+"&result="+result+"&score="+score, true);
+            xhr.send();
+        }
+
+        getResults();
+
+        let canvas = document.getElementById("canvas");
+        let context = canvas.getContext("2d");
+        let rows = 1;
+        let width = 600;
+        let height = 400;
+        let center = width / 2;
+        let selectedOrigin = [];
+        let selectedDestination = [];
+        let remainingPins = 0;
+
+        canvas.width = width;
+        canvas.height = height;
+        canvas.style.background = "#4F7849 ";
+
+        let circles = []; // Almaceno los circulos creados
+
+        function evaluateDrawingQuantity(holes) {
+            let drawable = false;
+
+            let row = 1;
+            while (holes > 0) {
+                holes = holes - row;
+                row++;
+                if (holes === 0) {
+                    drawable = true;
+                }
+            }
+            return drawable;
+        }
+
+        function calculateRows(holes) {
+            let rows = 1;
+            while (holes > 0) {
+                holes = holes - rows;
+                if (holes === 0) {
+                    return rows;
+                }
+                rows++;
+            }
+            return rows;
+        }
+
+        function getNeighbors(holeRow,holeColumn){
+            neihbors = [];
+
+            console.log(`Rows Q: ${rows}`)
+
+            //Fila de arriba                                                        [DONE]
+            if(holeRow == 1 && holeColumn == 1){
+                neihbors.push([2,1]); //Abajo Izquierda
+                neihbors.push([2,2]); //Abajo Derecha
+            }
+
+            //Todos los que estan en la izquierda pero no en las esquinas           [Pending]
+            if(holeColumn == 1 &&  holeRow > 1 && holeRow < rows){
+                console.log("Izquierda pero no esquina");
+                neihbors.push([holeRow-1,holeColumn]); //Arriba Derecha
+                neihbors.push([holeRow,holeColumn+1]); //Derecha
+                neihbors.push([holeRow+1,holeColumn]); //Abajo Izquierda
+                neihbors.push([holeRow+1,holeColumn+1]) //Abajo Derecha
+            }
+
+            //Todos los que estan en la derecha pero no en las esquinas             [Pending]
+            if(holeColumn == holeRow &&  holeRow > 1 && holeRow < rows){
+                console.log("Derecha pero no esquina");
+                neihbors.push([holeRow-1,holeColumn-1]); //Arriba Izquierda
+                neihbors.push([holeRow,holeColumn-1]); //Izquierda
+                neihbors.push([holeRow+1,holeColumn]); //Abajo Izquierda
+                neihbors.push([holeRow+1,holeColumn+1]) //Abajo Derecha
+            }
+
+            //Todos los que no estan en esquinas, ni a la izquierda, ni a la derecha, ni en la fila de arriba, ni en la fila de abajo   [Pending]
+            if(holeColumn != 1 &&  holeRow > 1 && holeRow < rows && holeColumn != holeRow){
+                console.log("No esquina, no izquierda no derecha");
+                neihbors.push([holeRow-1,holeColumn-1]); //Arriba Izquierda
+                neihbors.push([holeRow-1,holeColumn]); //Arriba Derecha
+                neihbors.push([holeRow,holeColumn-1]); //Izquierda
+                neihbors.push([holeRow,holeColumn+1]); //Derecha
+                neihbors.push([holeRow+1,holeColumn]); //Abajo Izquierda
+                neihbors.push([holeRow+1,holeColumn+1]) //Abajo Derecha
+            }
+
+            //Fila de abajo pero no estan en las esquinas                       [Pending]
+            if(holeColumn != 1 &&  holeRow == rows && holeColumn != holeRow){
+                console.log("Fila de abajo pero no esquinas");
+                neihbors.push([holeRow-1,holeColumn-1]); //Arriba Izquierda
+                neihbors.push([holeRow-1,holeColumn]); //Arriba Derecha
+                neihbors.push([holeRow,holeColumn-1]); //Izquierda
+                neihbors.push([holeRow,holeColumn+1]); //Derecha
+            }
+
+            //Esquina izquierda                                                 [Pending]
+            if(holeColumn == 1 &&  holeRow == rows){
+                console.log("Esquina iazquierda");
+                neihbors.push([holeRow-1,holeColumn]); //Arriba Derecha
+                neihbors.push([holeRow,holeColumn+1]); //Derecha
+            }
+
+            //Esquina derecha                                                   [Pending]
+            if(holeColumn == rows &&  holeRow == rows){
+                console.log("Esquina Derecha");
+                neihbors.push([holeRow-1,holeColumn-1]); //Arriba Izquierda
+                neihbors.push([holeRow,holeColumn-1]); //Izquierda
+            }
+
+            return neihbors;
+        }
+
+        function isLinearlyAligned(origin, neighbor, neighborNeighbor) {
+
+            console.log(`Origin[${origin.row},${origin.column}]`);
+            console.log(`neighbor[${neighbor.row},${neighbor.column}]`);
+            console.log(`neighborNeighbor[${neighborNeighbor.row},${neighborNeighbor.column}]`);
+            //Checo si estan horizontalmente alineados
+            if (origin.row == neighbor.row &&
+                neighbor.row == neighborNeighbor.row) {
+                console.log(`Horizontal aligned`);
+                return true;
+            }
+
+            //Checo si estan verticalmente alineados
+            if (origin.column == neighbor.column &&
+                neighbor.column == neighborNeighbor.column) {
+                console.log(`Vertical aligned`);
+                return true;
+            }
+
+            //Checo si estan alineados diagonalmente izquierda
+            if (origin.row - neighbor.row == neighbor.row - neighborNeighbor.row &&
+                origin.column - neighbor.column == neighbor.column - neighborNeighbor.column) {
+                console.log(`diagonally positive aligned`);
+                return true;
+            }
+
+            //Checo si estan diagonalmente alineados derecha
+            if (origin.row - neighbor.row == neighborNeighbor.row - neighbor.row &&
+                origin.column - neighbor.column == neighborNeighbor.column - neighbor.column) {
+                console.log(`diagonally negative aligned`);
+                return true;
+            }
+
+            return false;
+        }
+        
+        function buildGameBoard(holes) {
+            circles = [];
+            
+            let rows = Number(holes);
+            let centerDistance = rows * rows - 2 * rows + 1;
+            let a = 4 / centerDistance - 3;
+            let b = -4 * height / centerDistance;
+            let c = height * height / centerDistance;
+            let radius = (-b - ((b * b - 4 * a * c) ** 0.5)) / (2 * a);
+            let top = radius;
+            let diameter = ((radius * 2) ** 2 - radius ** 2) ** 0.5;
+            let y = 0;
+            let id = 1; // Start ID from 1
+
+            while (y < rows) {
+                let x = 0;
+                let left = center - (y * radius);
+                while (x <= y) {
+                    let xPos = left + (x++) * radius * 2;
+                    let yPos = top + y * diameter;
+                    let state = "occupied";
+                    let color = "#FF0000";
+                    if(id== 1){
+                        state = "empty";
+                        color = "#333333";
+                    }
+
+                    let myCircle = new Circle(xPos, yPos, radius / 1.7, color, id++,state,y+1,x);
+                    myCircle.draw(context);
+                    circles.push(myCircle);
+                }
+                y++;
+            }
+            console.log(`Remaining pins: ${remainingPins}`);
+        }
+
+        function startGame() {
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            context.clearRect(0, 0, width, height);
+
+            let message = "";
+
+            let username = document.getElementById("username").value;
+
+            let holes = document.getElementById("holes_quantity").value;
+            
+            let drawable = evaluateDrawingQuantity(holes);
+
+            let messageContainer = document.getElementById("message");
+
+            if(username == ""){
+                message = "<li>Please provide a Nickname!</li>";
+            }
+
+            if(holes < 6){
+                drawable =false;
+            }
+
+            if (!drawable) {
+                message =  message + "<li>Cannot draw a board with that quantity of holes, try another one. May I suggest 15?</li>";
+            }
+
+            if (drawable && username != "") {
+                message = "Let's get started!";
+                remainingPins = Number(holes) -1;
+                rows = calculateRows(holes);
+                buildGameBoard(rows);
+                debugConsoleBoardStatus();
+                messageContainer.style.color = "#fff";
+                messageContainer.style.backgroundColor = "#3f3f3f";
+            }
+
+            messageContainer.innerHTML = "<ul>" + message + "</ul>";
+            
+        }
+
+        class Circle {
+            constructor(xpos, ypos, radius, color, id, state, row, column) {
+                this.xpos = xpos;
+                this.ypos = ypos;
+                this.radius = radius;
+                this.color = color;
+                this.id = id;
+                this.state = state;
+                this.row = row;
+                this.column = column;
+            }
+
+            draw(context) {
+                context.beginPath();
+                context.lineWidth = 5;
+                context.arc(this.xpos, this.ypos, this.radius, 0, Math.PI * 2, false);
+                context.stroke();
+                context.closePath();
+                context.fillStyle = this.color;
+                context.fill();
+            }
+
+            isClicked(x, y) {
+                // Check if the click is inside the circle
+                const dx = x - this.xpos;
+                const dy = y - this.ypos;
+                return Math.sqrt(dx * dx + dy * dy) <= this.radius;
+            }
+        }
+
+        function debugConsoleBoardStatus(){
+            let lastRow = 1;
+            let debbugMessage = "";
+            let status = " ";
+            circles.forEach(circle => {
+                if(circle.state == "empty"){
+                    status = " ";
+                }
+                if(circle.state == "occupied"){
+                    status = "X";
+                }
+                if(circle.state == "temp"){
+                    status = "T";
+                }
+
+                if(circle.row == lastRow){
+                    debbugMessage = debbugMessage + `[${status}]`;
+                    lastRow = circle.row;
+                } else{
+                    console.log(`${debbugMessage}`);
+                    debbugMessage = `[${status}]`;
+                    lastRow = circle.row;
+                }                
+                    
+            });
+            console.log(`${debbugMessage}`);
+        }
+
+        function evaluateGameStatus(){
+            let pinsMovible = 0;
+            let moveAvailable = false;
+            let message = "";
+
+            circles.forEach(circle => {
+                moveAvailable = false;
+                if(circle.state == "occupied"){
+                    let neihbors = getNeighbors(circle.row,circle.column);
+                    neihbors.forEach(neighbor => {
+                        let neighborCircle = circles.find(c => c.row === neighbor[0] && c.column === neighbor[1]);
+                        if (neighborCircle) {
+                            let neighborNeighbors = getNeighbors(neighborCircle.row, neighborCircle.column);
+                            neighborNeighbors.forEach(neighborNeighbor => {
+                                let neighborNeighborCircle = circles.find(c => c.row === neighborNeighbor[0] && c.column === neighborNeighbor[1]);
+                                if (neighborNeighborCircle && (neighborNeighborCircle.state === "empty" || neighborNeighborCircle.state === "temp") && neighborCircle.state == "occupied") {
+                                    if(isLinearlyAligned(circle,neighborCircle,neighborNeighborCircle)){
+                                        moveAvailable = true;
+                                    }
+                                    
+                                }
+                            });
+                        }
+                    });
+                    if(moveAvailable){
+                        pinsMovible++;
+                    }
+                }
+            });
+
+            console.log(`Pins with moves available: ${pinsMovible}`);
+
+            let username = document.getElementById("username").value;
+
+            if(pinsMovible == 0 && remainingPins > 1){
+                message = "<ul><li>The is no move available, try again! GG</li></ul>";
+                //alert(message);
+                let messageContainer = document.getElementById("message");
+                messageContainer.style.color = "#fff";
+                messageContainer.style.backgroundColor = "#cf0000";
+                messageContainer.innerHTML = message;
+                sendResult(username,"Lost",remainingPins);
+                getResults();
+            } 
+
+            if(remainingPins == 1){
+                message = "<ul><li>Congrats you have won! GG</li></ul>";
+                //alert(message);
+                let messageContainer = document.getElementById("message");
+                messageContainer.style.color = "#000";
+                messageContainer.style.backgroundColor = "#00FF00";
+                messageContainer.innerHTML = message;
+                sendResult(username,"Won",remainingPins);
+                getResults();
+            }
+        }
+
+        canvas.addEventListener("click", (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            circles.forEach(circle => {
+                if (circle.isClicked(x, y)) {
+                    
+                    console.log(`Circle ID: ${circle.id} State: ${circle.state} Pos:[${circle.row},${circle.column}]`);
+
+                    if(circle.state == "occupied"){
+                        
+                        selectedOrigin = [circle.row,circle.column];
+
+                        console.log(`Set Selected Origin Circle ID: ${circle.id} State: ${circle.state} Pos:[${circle.row},${circle.column}]`);
+
+                        let neihbors = getNeighbors(circle.row,circle.column);
+                        
+                        nIndex = 1;
+                        
+                        neihbors.forEach(neighbor => {
+                            
+                            console.log(`Neighbor[${nIndex}]{${neighbor[0]},${neighbor[1]}}`);
+                            
+                            
+                            nIndex++;
+                            let neighborCircle = circles.find(c => c.row === neighbor[0] && c.column === neighbor[1]);
+
+                            if (neighborCircle) {
+
+                                let neighborNeighbors = getNeighbors(neighborCircle.row, neighborCircle.column);
+
+                                neighborNeighbors.forEach(neighborNeighbor => {
+                                    
+                                    let neighborNeighborCircle = circles.find(c => c.row === neighborNeighbor[0] && c.column === neighborNeighbor[1]);
+
+                                    if (neighborNeighborCircle && neighborNeighborCircle.state === "empty" && neighborCircle.state == "occupied") {
+                                        
+                                        if(isLinearlyAligned(circle,neighborCircle,neighborNeighborCircle)){
+                                            neighborNeighborCircle.color = "#00FF00"; // Change color to green
+                                            neighborNeighborCircle.draw(context);
+                                            neighborNeighborCircle.state = "temp";
+                                            console.log(`Linearly aligned Neighbor's Neighbor at [${neighborNeighborCircle.row}, ${neighborNeighborCircle.column}] changed to green.`);
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    
+                    }
+                
+                    if(circle.state == "temp"){
+
+                        //Marcar el destino como ocupado
+                        circle.color = "#FF0000";
+                        circle.state = "occupied";
+                        circle.draw(context);
+
+                        console.log(`Selected Origin ${selectedOrigin[0]},${selectedOrigin[1]}`);
+
+                        //Marcar el origen como vacio
+                        let originCircle = circles.find(c => c.row === selectedOrigin[0] && c.column === selectedOrigin[1]);
+
+                        console.log(`Origin Circle ID: ${originCircle.id} State: ${originCircle.state} Pos:[${originCircle.row},${originCircle.column}]`);
+
+                        originCircle.color = "#333333";
+                        originCircle.state = "empty";
+                        originCircle.draw(context);
+
+                        //Marcar el vecino de enmedio vacio (Indicando que ya removimos ese pin)
+                        let middleRow = (originCircle.row + circle.row) / 2;
+                        let middlecolumn = (originCircle.column + circle.column) / 2;
+
+                        //Se checa si el nodo entre origen y destino realmente existe
+                        if (Number.isInteger(middleRow) && Number.isInteger(middlecolumn)) {
+
+                            let middleNeighbor = circles.find(c => c.row === middleRow && c.column === middlecolumn);
+
+                            if (middleNeighbor) {
+                                console.log(`Middle Neighbor: [${middleNeighbor.row}, ${middleNeighbor.column}]`);
+                                middleNeighbor.color = "#333333";
+                                middleNeighbor.state = "empty";
+                                middleNeighbor.draw(context);
+                            }
+                        }
+
+                        circles.forEach(circleTemp => {
+                            if(circleTemp.state == "temp"){
+                                console.log(`Cleanning Temp Circle: [${circleTemp.row}, ${circleTemp.column}]`);
+                                circleTemp.color = "#333333";
+                                circleTemp.state = "empty";
+                                circleTemp.draw(context);
+                            }
+                        });
+
+                        remainingPins--;
+                        console.log(`Remaining pins: ${remainingPins}`);
+
+                    }
+                    
+                    evaluateGameStatus();
+                    debugConsoleBoardStatus();
+
+                }
+            });
+        });
+    </script>
+</body>
+</html>

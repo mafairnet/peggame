@@ -1,0 +1,17 @@
+{
+  "name": "Peg Game Implementation",
+  "version": "1.0.0",
+  "description": "Peg Game",
+  "main": "app.js",
+  "dependencies": {
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Miguel Angel Torres Govea",
+  "license": "ISC",
+  "type": "module"
+}

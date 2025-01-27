@@ -3,7 +3,7 @@ Peg Game Dockerized
 This is a javascript implementation of the Peg Game on a Docker.
 
 <p align="center">
-  <img width="400px" src="https://raw.githubusercontent.com/mafairnet/hachi/master/resources/hachi_logo.png">
+  <img width="400px" src="https://raw.githubusercontent.com/mafairnet/peggame/refs/heads/main/peg_game.jpg">
 </p>
 
 About
@@ -27,7 +27,7 @@ yum install docker git
 ```
 2. Clone this repo
 ```
-git clone
+git clone https://github.com/mafairnet/peggame.git
 ```
 3. Build the Docker image
 ```
